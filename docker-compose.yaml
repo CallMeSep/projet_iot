@@ -16,6 +16,7 @@ services:
     networks:
       - batiment-a
       - batiment-b
+      - acquisition
 
   compteur-01:
     build: ./Generateur_donnees
@@ -28,6 +29,11 @@ services:
       DEPART: ${DEPART:-}       # instant de départ commun (secondes Unix), vide = immédiat
     networks:
       - batiment-a
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
 
   compteur-02:
     build: ./Generateur_donnees
@@ -40,7 +46,11 @@ services:
       DEPART: ${DEPART:-}       # instant de départ commun (secondes Unix), vide = immédiat
     networks:
       - batiment-a
-
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
   compteur-03:
     build: ./Generateur_donnees
     depends_on:
@@ -52,6 +62,11 @@ services:
       DEPART: ${DEPART:-}       # instant de départ commun (secondes Unix), vide = immédiat
     networks:
       - batiment-b
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
 
   compteur-04:
     build: ./Generateur_donnees
@@ -64,7 +79,25 @@ services:
       DEPART: ${DEPART:-}       # instant de départ commun (secondes Unix), vide = immédiat
     networks:
       - batiment-b
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+
+
+  nodered:
+    image: nodered/node-red:4.0.5
+    ports:
+      - "1880:1880"            # interface web, pendant le développement
+    volumes:
+      - ./nodered:/data        # flux et réglages versionnés dans le dépôt
+    depends_on:
+      - mosquitto
+    networks:
+      - acquisition
 
 networks:
   batiment-a:
   batiment-b:
+  acquisition:

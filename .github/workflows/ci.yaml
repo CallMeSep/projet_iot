@@ -2,36 +2,58 @@ name: ci
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
-  verifier:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Récupérer le dépôt avec tout l'historique
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0          # la recherche de secrets parcourt tous les commits
+    verifier:
+        runs-on: ubuntu-24.04
+        steps:
+        - name: Récupérer le dépôt avec tout l'historique
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0          # la recherche de secrets parcourt tous les commits
 
-      - name: Chercher des secrets dans tout l'historique
-        run: |
-          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.18.4 \
-            detect --source /repo --redact --verbose
+        - name: Chercher des secrets dans tout l'historique
+          run: |
+            docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.18.4 \
+                detect --source /repo --redact --verbose
 
-      - name: Valider le fichier Compose
-        run: docker compose config --quiet
+        - name: Valider le fichier Compose
+          run: docker compose config --quiet
 
-      - name: Refuser les images sans version fixée
-        run: ./scripts/verifier_images.sh
+        - name: Refuser les images sans version fixée
+          run: ./scripts/verifier_images.sh
 
-      - name: Construire les images
-        run: docker compose build
+        - name: Construire les images
+          run: docker compose build
 
-      - name: Vérifier que l'image des compteurs démarre
-        run: |
-          # La bibliothèque MQTT est bien installée dans l'image
-          docker compose run --rm --no-deps compteur-01 \
-            python -c "import paho.mqtt.client; print('paho-mqtt présent')"
-          # Le compteur trouve ses données et les rejoue (sans broker)
-          docker compose run --rm --no-deps -e PAUSE=0 compteur-01 \
-            python rejeu_provisoire.py --simulation > /dev/null
+        - name: Vérifier que l'image des compteurs démarre
+          run: |
+            # La bibliothèque MQTT est bien installée dans l'image
+            docker compose run --rm --no-deps compteur-01 \
+                python -c "import paho.mqtt.client; print('paho-mqtt présent')"
+            # Le compteur trouve ses données et les rejoue (sans broker)
+            docker compose run --rm --no-deps -e PAUSE=0 compteur-01 \
+                python rejeu_provisoire.py --simulation > /dev/null
+
+    publier:
+        needs: verifier                   # ne démarre que si "verifier" a réussi
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: read
+            packages: write                 # droit d'écrire dans le registre GitHub
+        steps:
+        - uses: actions/checkout@v4
+
+        - name: Se connecter au registre GitHub
+          run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+        - name: Construire et publier l'image des compteurs
+          run: |
+            proprietaire="${GITHUB_REPOSITORY_OWNER,,}"        # le registre exige des minuscules
+            image="ghcr.io/$proprietaire/smart-campus-compteur"
+            docker build -t "$image:${GITHUB_SHA::7}" -t "$image:main" ./Generateur_donnees
+            docker push "$image:${GITHUB_SHA::7}"
+            docker push "$image:main"  
