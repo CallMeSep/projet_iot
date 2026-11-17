@@ -1,0 +1,10 @@
+nodered/node_modules/
+nodered/.config.*.json
+nodered/flows_cred.json
+nodered/*.backup
+nodered/.*.backup
+nodered/node_modules/
+nodered/.config.*.json
+nodered/flows_cred.json
+nodered/*.backup
+nodered/.*.backup

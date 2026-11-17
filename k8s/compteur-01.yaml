@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compteur-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: compteur-01 }
+  template:
+    metadata:
+      labels: { app: compteur-01 }
+    spec:
+      containers:
+        - name: compteur
+          image: ghcr.io/<votre-compte>/smart-campus-compteur:main
+          env:
+            - { name: COMPTEUR, value: compteur-01 }
+            - { name: MQTT_HOST, value: mosquitto }
+            - { name: PAUSE, value: "5" }
