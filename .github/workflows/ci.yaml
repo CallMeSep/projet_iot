@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Récupérer le dépôt avec tout l'historique
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # la recherche de secrets parcourt tous les commits
+
+      - name: Chercher des secrets dans tout l'historique
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.18.4 \
+            detect --source /repo --redact --verbose
+
+      - name: Valider le fichier Compose
+        run: docker compose config --quiet
+
+      - name: Refuser les images sans version fixée
+        run: ./scripts/verifier_images.sh
+
+      - name: Construire les images
+        run: docker compose build
+
+      - name: Vérifier que l'image des compteurs démarre
+        run: |
+          # La bibliothèque MQTT est bien installée dans l'image
+          docker compose run --rm --no-deps compteur-01 \
+            python -c "import paho.mqtt.client; print('paho-mqtt présent')"
+          # Le compteur trouve ses données et les rejoue (sans broker)
+          docker compose run --rm --no-deps -e PAUSE=0 compteur-01 \
+            python rejeu_provisoire.py --simulation > /dev/null
