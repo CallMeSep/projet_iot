@@ -6,7 +6,7 @@ set -eu
 erreur=0
 
 # docker-compose.yml : chaque ligne "image:" doit avoir un tag, différent de latest
-if grep -nE '^[[:space:]]*image:[[:space:]]*[^:[:space:]]+[[:space:]]*$|^[[:space:]]*image:.*:latest' docker-compose.yml; then
+if grep -nE '^[[:space:]]*image:[[:space:]]*[^:[:space:]]+[[:space:]]*$|^[[:space:]]*image:.*:latest' docker-compose.yaml; then
   echo "ERREUR : image sans version fixée dans docker-compose.yml (voir ci-dessus)"
   erreur=1
 fi
