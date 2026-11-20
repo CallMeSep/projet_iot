@@ -4,5 +4,5 @@ resources:
   - mosquitto.yaml
   - compteur-01.yaml
 images:
-  - name: ghcr.io/<votre-compte>/smart-campus-compteur
+  - name: ghcr.io/callmesep/smart-campus-compteur
     newTag: main          # remplacé par l'identifiant du commit par le pipeline

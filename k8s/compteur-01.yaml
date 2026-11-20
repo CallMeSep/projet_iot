@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: compteur
-          image: ghcr.io/<votre-compte>/smart-campus-compteur:main
+          image: ghcr.io/callmesep/smart-campus-compteur:main
           env:
             - { name: COMPTEUR, value: compteur-01 }
             - { name: MQTT_HOST, value: mosquitto }
